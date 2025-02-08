@@ -18,4 +18,4 @@ def get_db():
     try:
         yield db
     finally:
-        db.close()  # 세션 종료
+        db.close()

@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
-from routers import analysis, user
+from routers import analysis, user, keyword
 from dotenv import load_dotenv
 from routers.analysis import load_model
 
@@ -21,6 +21,7 @@ app = FastAPI(
 
 # CORS 미들웨어 설정
 origins = [
+    "http://127.0.0.1:8000",
     "http://localhost:3000",  # 클라이언트 개발환경
     os.getenv("FRONTEND_DOMAIN"),  # 배포된 프론트엔드 도메인
 ]
@@ -35,8 +36,9 @@ app.add_middleware(
 
 
 # 라우터 등록
-app.include_router(user.router, prefix="/users", tags=["user-controller"])
-app.include_router(analysis.router, prefix="/analysis", tags=["analysis-controller"])
+app.include_router(user.router, prefix="/users", tags=["user"])
+app.include_router(analysis.router, prefix="/analysis", tags=["analysis"])
+app.include_router(keyword.router, prefix="/keywords", tags=["keywords"])
 
 # OpenAPI 스키마 수정
 def custom_openapi():
