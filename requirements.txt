@@ -1,0 +1,12 @@
+#Python version 3.8.10
+fastapi
+uvicorn
+transformers
+sentencepiece
+#mxnet==1.7.0.post2 --no-deps
+gluonnlp==0.8.0
+numpy==1.23.1
+torch
+pandas
+git+https://github.com/SKTBrain/KoBERT.git#egg=kobert_tokenizer&subdirectory=kobert_hf
+gdown
