@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Text, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Text, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -24,7 +24,6 @@ class Keyword(Base):
     keywordId = Column(Integer, primary_key=True, index=True, autoincrement=True)
     keyword = Column(String(255), nullable=False, unique=True)
 
-    # 관계 설정: Keyword는 여러 개의 Favorites와 Reports를 가질 수 있음
     favorites = relationship("Favorite", back_populates="keyword")
     reports = relationship("Report", back_populates="keyword")
 
@@ -36,7 +35,6 @@ class Favorite(Base):
     userId = Column(Integer, ForeignKey('users.userId'), nullable=False)
     keywordId = Column(Integer, ForeignKey('keywords.keywordId'), nullable=False)
 
-    # 관계 설정
     user = relationship("User", back_populates="favorites")
     keyword = relationship("Keyword", back_populates="favorites")
 
@@ -51,11 +49,9 @@ class Report(Base):
     reportContent = Column(Text, nullable=True)
     isViewed = Column(Boolean, default=False)
 
-    # 관계 설정
     user = relationship("User", back_populates="reports")
     keyword = relationship("Keyword", back_populates="reports")
 
-    # UNIQUE 제약조건 설정: 하루에 한 번 보고서 생성
     __table_args__ = (
         UniqueConstraint('userId', 'keywordId', 'reportDate', name='_user_keyword_reportDate_uc'),
     )

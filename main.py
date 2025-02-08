@@ -1,22 +1,13 @@
+import logging
 import os
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
+from fastapi.middleware.cors import CORSMiddleware
 from routers import analysis, user
-from routers.analysis import load_model
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-import logging
+from routers.analysis import load_model
 
-# .env 파일에서 환경 변수 로드
 load_dotenv()
-
-# 환경 변수에서 중요한 정보 불러오기 (예: 데이터베이스 URL)
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-# 데이터베이스 연결 설정 (SQLAlchemy)
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +18,21 @@ app = FastAPI(
     description="API for analyze trend services",
     version="1.0.0",
 )
+
+# CORS 미들웨어 설정
+origins = [
+    "http://localhost:3000",  # 클라이언트 개발환경
+    os.getenv("FRONTEND_DOMAIN"),  # 배포된 프론트엔드 도메인
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # 허용할 도메인
+    allow_credentials=True,
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
+)
+
 
 # 라우터 등록
 app.include_router(user.router, prefix="/users", tags=["user-controller"])
