@@ -67,11 +67,11 @@ def load_model(model_path="model.pt"):
     # 모델 파일이 없으면 다운로드
     if not os.path.exists(model_path):
         print(f"{model_path} not found. Downloading from Google Drive...")
-        download_model_from_google_drive(file_id="1t2PPNGawil9dcqFbUie5JJL-02_FDD0y", output_path=model_path)
+        download_model_from_google_drive(file_id="19RWkGe6o_FOGY3ivkwy43PbNM6zpCmkc", output_path=model_path)
 
     # 모델 초기화 및 state_dict 로드
     model = BERTClassifier(bert_model, dr_rate=0.5).to(device)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(model_path, map_location=device)
     model.eval()
     print("Model loaded successfully.")
 
