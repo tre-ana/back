@@ -1,3 +1,7 @@
 venv/
 __pycache__/
 *.pyc
+model.pt
+*.pt
+*.pth
+.env
