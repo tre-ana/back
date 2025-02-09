@@ -219,7 +219,7 @@ def load_model(model_path="model.pt"):
 
 # 모델 분석 API
 @router.post("/analysis/sentiment")
-async def analyze_sentiment(sentence: str):
+def analyze_sentiment(sentence: str):
     """입력 문장에 대한 감정 분석 수행"""
     try:
         if model is None:
@@ -249,6 +249,7 @@ async def analyze_sentiment(sentence: str):
             "Negative": probabilities[1],
             "Neutral": probabilities[2],
         }
+
 
     except Exception as e:
         print(f"Error during prediction: {e}")

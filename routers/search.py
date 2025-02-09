@@ -24,5 +24,8 @@ def search_naver(keyword: str):
     res_body = res.read()
     
     js = json.loads(res_body.decode('utf-8'))
+    result = list()
+    for j in js['items']:
+        result.append(j['description'])
     
-    return js
+    return result

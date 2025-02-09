@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from routers import analysis, search, user
-from routers.analysis import load_model
+
+from routers.search import search_naver
+from routers.analysis import load_model, analyze_sentiment
 
 import pandas as pd
 
@@ -56,18 +58,24 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 @app.get("/")
-def get_result(keyword: str):
+async def get_result(keyword: str):
     pos = 0
     neg = 0
     neu = 0
     
-    res = search.search_naver(keyword)
+    search = search_naver(keyword)
     
-    df = pd.DataFrame(js['items'])
+    for data in search:
+        sentiment = analyze_sentiment(data)
+        if sentiment["predicted_class_label"] == '긍정':
+            pos += 1
+        elif sentiment["predicted_class_label"] == '부정':
+            neg += 1
+        else:
+            neu += 1
     
-    pd.set_option("display.max_columns", None)  # 모든 열 표시
-    pd.set_option("display.max_rows", 100)  # 최대 100행까지 표시
-    pd.set_option("display.width", 1000)  # 한 줄에 출력할 최대 글자 수
-    pd.set_option("display.colheader_justify", "center")  # 컬럼명 가운데 정렬
-
-    print(df[['description', 'postdate']])
+    return {
+        '긍정': pos,
+        '부정': neg,
+        '중립': neu
+    }
