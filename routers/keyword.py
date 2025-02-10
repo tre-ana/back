@@ -17,11 +17,19 @@ class ReportResponse(BaseModel):
     keyword: str
     reportDate: date
     reportContent: str
+    keywordId: int
     isViewed: bool
 
 class UpdateReportRequest(BaseModel):
     reportId: int
+    keyword: str
+    reportDate: date
+    keywordId: int
+    reportContent: str
     isViewed: bool
+
+class DeleteReportRequest(BaseModel):
+    reportId: int
 
 # 키워드 저장
 @router.post("/save_keyword")
@@ -65,6 +73,13 @@ async def delete_user_keyword(request: KeywordRequest, db: Session = Depends(get
     if not favorite:
         raise HTTPException(status_code=400, detail="Keyword not found in user's favorites")
 
+    # 사용자가 즐겨찾기한 키워드에 해당하는 리포트들 조회
+    reports = db.query(Report).filter(Report.keywordId == db_keyword.keywordId, Report.userId == user_id).all()
+
+    # 리포트 삭제 (해당 키워드와 관련된 모든 리포트)
+    for report in reports:
+        db.delete(report)
+    
     # Favorite 삭제
     db.delete(favorite)
     db.commit()
@@ -95,40 +110,78 @@ async def get_user_favorites(db: Session = Depends(get_db), current_user: dict =
     return keyword_list
     
 # 사용자가 즐겨찾기한 키워드에 대한 리포트 조회
-@router.get("/reports", response_model=List[ReportResponse])
-async def get_user_reports(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+@router.get("/reports/{keyword}", response_model=List[ReportResponse])
+async def get_reports_for_keyword(keyword: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id = current_user['userId']
 
     # 사용자가 즐겨찾기한 키워드를 먼저 조회
     favorites = db.query(Favorite).filter(Favorite.userId == user_id).all()
-    
+
     if not favorites:
         raise HTTPException(status_code=404, detail="No favorite keywords found")
 
-    # 즐겨찾기한 키워드에 대한 리포트 목록 조회
-    reports = []
-    for favorite in favorites:
-        db_keyword = db.query(Keyword).filter(Keyword.keywordId == favorite.keywordId).first()
-        if db_keyword:
-            # 해당 키워드에 대한 리포트 조회
-            db_reports = db.query(Report).filter(Report.keywordId == db_keyword.keywordId, Report.userId == user_id).all()
-            for report in db_reports:
-                reports.append(ReportResponse(
-                    reportId=report.reportId,
-                    keyword=db_keyword.keyword,
-                    reportDate=report.reportDate,
-                    reportContent=report.reportContent,
-                    isViewed=report.isViewed
-                ))
+    # 해당 키워드가 사용자의 즐겨찾기 목록에 있는지 확인
+    db_keyword = db.query(Keyword).filter(Keyword.keyword == keyword).first()
+    if not db_keyword:
+        raise HTTPException(status_code=404, detail=f"Keyword '{keyword}' not found in user's favorites")
 
+    # 해당 키워드에 대한 리포트 조회
+    reports = db.query(Report).filter(Report.keywordId == db_keyword.keywordId, Report.userId == user_id).all()
+    
     if not reports:
-        raise HTTPException(status_code=404, detail="No reports found for your favorite keywords")
+        raise HTTPException(status_code=404, detail="No reports found for the specified keyword")
 
-    return reports
+    # 리포트 리스트 반환
+    return [ReportResponse(
+        reportId=report.reportId,
+        keyword=db_keyword.keyword,
+        keywordId=db_keyword.keywordId,
+        reportDate=report.reportDate,
+        reportContent=report.reportContent,
+        isViewed=report.isViewed
+    ) for report in reports]
+
 
 # 리포트의 'isViewed' 상태 업데이트
 @router.put("/update_report_viewed", response_model=ReportResponse)
 async def update_report_viewed(request: UpdateReportRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    try:
+        print("Request Data:", request)
+        user_id = current_user['userId']
+        print(user_id)
+        # 리포트 조회
+        db_report = db.query(Report).filter(Report.reportId == request.reportId, Report.userId == user_id).first()
+        print(db_report)
+
+        if not db_report:
+            raise HTTPException(status_code=404, detail="Report not found")
+
+        db_report.keywordId = request.keywordId
+        db_report.reportDate = request.reportDate
+        db_report.reportContent = request.reportContent
+        db_report.isViewed = request.isViewed
+
+        # 리포트 상태 업데이트
+        db.commit()
+        db.refresh(db_report)
+        db_keyword = db.query(Keyword).filter(Keyword.keywordId == db_report.keywordId).first()
+        
+        return ReportResponse(
+            reportId=db_report.reportId,
+            keyword=db_keyword.keyword,
+            keywordId=db_keyword.keywordId,
+            reportDate=db_report.reportDate,
+            reportContent=db_report.reportContent,
+            isViewed=db_report.isViewed
+        )
+    except Exception as e:
+        print(f"Server Error: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+# 리포트 삭제
+@router.delete("/delete_report", response_model=dict)
+async def delete_report(request: DeleteReportRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id = current_user['userId']
 
     # 리포트 ID에 해당하는 리포트를 조회
@@ -137,16 +190,9 @@ async def update_report_viewed(request: UpdateReportRequest, db: Session = Depen
     if not db_report:
         raise HTTPException(status_code=404, detail="Report not found")
 
-    # 리포트의 'isViewed' 상태 업데이트
-    db_report.isViewed = request.isViewed
+    # 리포트 삭제
+    db.delete(db_report)
     db.commit()
-    db.refresh(db_report)
 
-    # 리포트 상태 업데이트 후 반환
-    return ReportResponse(
-        reportId=db_report.reportId,
-        keyword=db_report.keyword,  
-        reportDate=db_report.reportDate,
-        reportContent=db_report.reportContent, 
-        isViewed=db_report.isViewed 
-    )
+    # 리포트 삭제 후 메시지 반환
+    return {"message": f"Report with ID {request.reportId} deleted successfully!"}
