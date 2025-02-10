@@ -26,6 +26,6 @@ def search_naver(keyword: str):
     js = json.loads(res_body.decode('utf-8'))
     result = list()
     for j in js['items']:
-        result.append(j['description'])
+        result.append((j['description'], j['postdate']))
     
     return result

@@ -63,10 +63,10 @@ async def get_result(keyword: str):
     neg = 0
     neu = 0
     
-    search = search_naver(keyword)
+    data = search_naver(keyword)
     
-    for data in search:
-        sentiment = analyze_sentiment(data)
+    for desc, date in data:
+        sentiment = analyze_sentiment(desc)
         if sentiment["predicted_class_label"] == '긍정':
             pos += 1
         elif sentiment["predicted_class_label"] == '부정':
