@@ -1,3 +1,7 @@
+from pydantic import BaseModel
+from database import engineconn
+from models import Users
+
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from routers import analysis, search, user
@@ -13,6 +17,15 @@ try:
 except Exception as e:
     print(f"Error during model setup: {e}")
 
+engine = engineconn()
+session = engine.sessionmaker()
+
+class Item(BaseModel):
+    user_id : str
+    username : str
+    email : str
+    password : str
+
 app = FastAPI(
     title="TreAna API",
     description="API for analyze trend services",
@@ -23,6 +36,11 @@ app = FastAPI(
 app.include_router(user.router, prefix="/api", tags=["user-controller"])
 app.include_router(analysis.router, prefix="/api", tags=["analysis-controller"])
 app.include_router(search.router, prefix='/api', tags=["search-controller"])
+
+@app.get("/userdb")
+async def first_get():
+    example = session.query(Users).all()
+    return example
 
 # OpenAPI 스키마 수정
 def custom_openapi():
