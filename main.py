@@ -22,7 +22,7 @@ app = FastAPI(
 # CORS 미들웨어 설정
 origins = [
     "http://127.0.0.1:8000",
-    "http://localhost:3000",  # 클라이언트 개발환경
+    "http://localhost:5173",  # 클라이언트 개발환경
     os.getenv("FRONTEND_DOMAIN"),  # 배포된 프론트엔드 도메인
 ]
 
