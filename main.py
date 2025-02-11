@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import analysis, user, keyword, search
 from dotenv import load_dotenv
 from routers.analysis import load_model
-from routers.search import search_naver
+from routers.search import search_naver, search_datalab
 from routers.analysis import analyze_sentiment
 
 load_dotenv()
@@ -42,6 +42,7 @@ app.add_middleware(
 app.include_router(user.router, prefix="/users", tags=["user"])
 app.include_router(analysis.router, prefix="/analysis", tags=["analysis"])
 app.include_router(keyword.router, prefix="/keywords", tags=["keywords"])
+app.include_router(search.router, prefix="/search", tags=["search"])
 
 # OpenAPI 스키마 수정
 def custom_openapi():
@@ -79,6 +80,7 @@ app.openapi = custom_openapi
 
 @app.get("/result")
 async def get_result(keyword: str):
+    # 정확도 기반 검색
     result = []
     data = search_naver(keyword)
     
@@ -86,4 +88,25 @@ async def get_result(keyword: str):
         sentiment = analyze_sentiment(desc)
         result.append({"date": date, "description": desc, "sentiment": sentiment["predicted_class_label"]})
     
+    return result
+
+@app.get("/datalab")
+async def get_datalab(startDate: str, 
+                   endDate: str, 
+                   timeUnit: str, 
+                   keywordGroups: str, 
+                   device: str, 
+                   gender: str, 
+                   ages: str):
+    
+    result = await search_datalab(
+        startDate=startDate, 
+        endDate=endDate, 
+        timeUnit=timeUnit, 
+        keywordGroups=keywordGroups, 
+        device=device, 
+        gender=gender, 
+        ages=ages
+    )
+    # 결과 반환
     return result
