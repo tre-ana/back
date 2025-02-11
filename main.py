@@ -2,29 +2,20 @@ from pydantic import BaseModel
 from database import engineconn
 from models import Users
 
+import logging
+import os
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
-from routers import analysis, search, user
+from fastapi.middleware.cors import CORSMiddleware
+from routers import analysis, user, keyword
+from dotenv import load_dotenv
+from routers.analysis import load_model
 
-from routers.search import search_naver
-from routers.analysis import load_model, analyze_sentiment
+load_dotenv()
 
-import pandas as pd
-
-# FastAPI 실행 시 모델 로드
-try:
-    load_model("model.pt")
-except Exception as e:
-    print(f"Error during model setup: {e}")
-
-engine = engineconn()
-session = engine.sessionmaker()
-
-class Item(BaseModel):
-    user_id : str
-    username : str
-    email : str
-    password : str
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="TreAna API",
@@ -32,15 +23,26 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# 라우터 등록
-app.include_router(user.router, prefix="/api", tags=["user-controller"])
-app.include_router(analysis.router, prefix="/api", tags=["analysis-controller"])
-app.include_router(search.router, prefix='/api', tags=["search-controller"])
+# CORS 미들웨어 설정
+origins = [
+    "http://127.0.0.1:8000",
+    "http://localhost:5173",  # 클라이언트 개발환경
+    os.getenv("FRONTEND_DOMAIN"),  # 배포된 프론트엔드 도메인
+]
 
-@app.get("/userdb")
-async def first_get():
-    example = session.query(Users).all()
-    return example
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # 허용할 도메인
+    allow_credentials=True,
+    allow_methods=["*"],  # 모든 HTTP 메서드 허용
+    allow_headers=["*"],  # 모든 헤더 허용
+)
+
+
+# 라우터 등록
+app.include_router(user.router, prefix="/users", tags=["user"])
+app.include_router(analysis.router, prefix="/analysis", tags=["analysis"])
+app.include_router(keyword.router, prefix="/keywords", tags=["keywords"])
 
 # OpenAPI 스키마 수정
 def custom_openapi():
@@ -61,6 +63,7 @@ def custom_openapi():
         }
     }
     openapi_schema["security"] = [{"BearerAuth": []}]
+    
     for path, methods in openapi_schema["paths"].items():
         for method, details in methods.items():
             if "parameters" in details:
