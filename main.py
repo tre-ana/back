@@ -3,11 +3,14 @@ import os
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
-from routers import analysis, user, keyword
+from routers import analysis, user, keyword, search
 from dotenv import load_dotenv
 from routers.analysis import load_model
+from routers.search import search_naver
+from routers.analysis import analyze_sentiment
 
 load_dotenv()
+load_model()
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -74,25 +77,13 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-@app.get("/")
+@app.get("/result")
 async def get_result(keyword: str):
-    pos = 0
-    neg = 0
-    neu = 0
-    
+    result = []
     data = search_naver(keyword)
     
     for desc, date in data:
         sentiment = analyze_sentiment(desc)
-        if sentiment["predicted_class_label"] == '긍정':
-            pos += 1
-        elif sentiment["predicted_class_label"] == '부정':
-            neg += 1
-        else:
-            neu += 1
+        result.append({"date": date, "description": desc, "sentiment": sentiment["predicted_class_label"]})
     
-    return {
-        '긍정': pos,
-        '부정': neg,
-        '중립': neu
-    }
+    return result
