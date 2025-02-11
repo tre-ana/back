@@ -1,3 +1,7 @@
+from pydantic import BaseModel
+from database import engineconn
+from models import Users
+
 import logging
 import os
 from fastapi import FastAPI
@@ -74,3 +78,25 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
+@app.get("/")
+async def get_result(keyword: str):
+    pos = 0
+    neg = 0
+    neu = 0
+    
+    data = search_naver(keyword)
+    
+    for desc, date in data:
+        sentiment = analyze_sentiment(desc)
+        if sentiment["predicted_class_label"] == '긍정':
+            pos += 1
+        elif sentiment["predicted_class_label"] == '부정':
+            neg += 1
+        else:
+            neu += 1
+    
+    return {
+        '긍정': pos,
+        '부정': neg,
+        '중립': neu
+    }
