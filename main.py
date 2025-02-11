@@ -1,7 +1,3 @@
-from pydantic import BaseModel
-from database import engineconn
-from models import Users
-
 import logging
 import os
 from fastapi import FastAPI
