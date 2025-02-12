@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from routers import analysis, user, keyword, search
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from routers.analysis import load_model
 from routers.search import search_naver, search_datalab
@@ -78,7 +79,7 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-@app.get("/result")
+@app.post("/result")
 async def get_result(keyword: str):
     # 정확도 기반 검색
     result = []
@@ -90,23 +91,10 @@ async def get_result(keyword: str):
     
     return result
 
-@app.get("/datalab")
-async def get_datalab(startDate: str, 
-                   endDate: str, 
-                   timeUnit: str, 
-                   keywordGroups: str, 
-                   device: str, 
-                   gender: str, 
-                   ages: str):
+
+@app.post("/datalab")
+async def get_datalab(body: dict):
     
-    result = await search_datalab(
-        startDate=startDate, 
-        endDate=endDate, 
-        timeUnit=timeUnit, 
-        keywordGroups=keywordGroups, 
-        device=device, 
-        gender=gender, 
-        ages=ages
-    )
+    result = await search_datalab(body)
     # 결과 반환
     return result
