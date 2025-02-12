@@ -95,6 +95,6 @@ async def get_result(keyword: str):
 @app.post("/datalab")
 async def get_datalab(body: dict):
     
-    result = await search_datalab(body)
+    result = search_datalab(body)
     # 결과 반환
     return result
