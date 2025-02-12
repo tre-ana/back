@@ -90,7 +90,7 @@ class KeywordResponse(BaseModel):
     keyword: str
 
 # 사용자가 즐겨찾기한 키워드 조회
-@router.get("/favorites", response_model=list[KeywordResponse])
+@router.get("/favorites", response_model=List[KeywordResponse])
 async def get_user_favorites(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_id = current_user['userId']
     
