@@ -2,6 +2,7 @@ import urllib.parse
 import urllib.request
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 import json
 import pandas as pd
@@ -31,25 +32,21 @@ def search_naver(keyword: str):
         
     return result
 
+
 @router.get("/naver/datalab")
-def search_datalab(startDate: str, 
-                   endDate: str, 
-                   timeUnit: str, 
-                   keywordGroups: str, 
-                   device: str, 
-                   gender: str, 
-                   ages: str):
+def search_datalab(body: dict):
     
-    
+    '''
     body_dict = {
         "startDate": startDate,
         "endDate": endDate,
         "timeUnit": timeUnit,
-        "keywordGroups": json.loads(keywordGroups),
+        "keywordGroups": DataLabRequest.loads(keywordGroups),
         "device": device,
         "gender": gender,
         "ages": json.loads(ages)
     }
+    '''
     
     #body_dict={} #검색 정보를 저장할 변수
     #body_dict["startDate"] = startDate # 2020-01-01
@@ -62,8 +59,7 @@ def search_datalab(startDate: str,
     #1: 0∼12세, 2: 13∼18세, 3: 19∼24세, 4: 25∼29세, 
     #5: 30∼34세, 6: 35∼39세, 7: 40∼44세, 8: 45∼49세, 9: 50∼54세, 10: 55∼59세, 11: 60세 이상
 
-    #body = str(body_dict).replace("'",'"')
-    body = json.dumps(body_dict)
+    body = json.dumps(body)
     
     request = urllib.request.Request(datalab_url)
     request.add_header("X-Naver-Client-Id", NAVER_CLIENT_ID)
