@@ -10,6 +10,13 @@ from routers.analysis import load_model
 from routers.search import search_naver, search_datalab
 from routers.analysis import analyze_sentiment
 
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from database import get_db
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+
 load_dotenv()
 load_model()
 
@@ -22,6 +29,8 @@ app = FastAPI(
     description="API for analyze trend services",
     version="1.0.0",
 )
+
+scheduler = BackgroundScheduler()
 
 # CORS 미들웨어 설정
 origins = [
@@ -105,3 +114,9 @@ async def get_datalab(body: dict):
 def health_check():
     return {"status": "healthy"}
 
+
+async def alert_auto_reports():
+    await keyword.generate_reports(db = Depends(get_db), current_user = Depends(keyword.get_current_user))
+
+scheduler.add_job(alert_auto_reports, 'cron', hour=9, minute=0, timezone='Asia/Seoul')
+scheduler.start()
