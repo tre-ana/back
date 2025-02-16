@@ -39,6 +39,7 @@ app.add_middleware(
 )
 
 
+
 # 라우터 등록
 app.include_router(user.router, prefix="/users", tags=["user"])
 app.include_router(analysis.router, prefix="/analysis", tags=["analysis"])
@@ -98,3 +99,9 @@ async def get_datalab(body: dict):
     result = search_datalab(body)
     # 결과 반환
     return result
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+

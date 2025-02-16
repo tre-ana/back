@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()  # SQLAlchemy ORM 모델의 기반 클래스
 
 class User(Base):
-    __tablename__ = 'users'  # MySQL 테이블 이름과 일치
+    __tablename__ = 'Users'  # MySQL 테이블 이름과 일치
 
     userId = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nickname = Column(String(50), nullable=False)
@@ -19,7 +19,7 @@ class User(Base):
 
 
 class Keyword(Base):
-    __tablename__ = 'keywords'
+    __tablename__ = 'Keywords'
 
     keywordId = Column(Integer, primary_key=True, index=True, autoincrement=True)
     keyword = Column(String(255), nullable=False, unique=True)
@@ -29,22 +29,22 @@ class Keyword(Base):
 
 
 class Favorite(Base):
-    __tablename__ = 'favorites'
+    __tablename__ = 'Favorites'
 
     favoriteId = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    userId = Column(Integer, ForeignKey('users.userId'), nullable=False)
-    keywordId = Column(Integer, ForeignKey('keywords.keywordId'), nullable=False)
+    userId = Column(Integer, ForeignKey('Users.userId'), nullable=False)
+    keywordId = Column(Integer, ForeignKey('Keywords.keywordId'), nullable=False)
 
     user = relationship("User", back_populates="favorites")
     keyword = relationship("Keyword", back_populates="favorites")
 
 
 class Report(Base):
-    __tablename__ = 'reports'
+    __tablename__ = 'Reports'
 
     reportId = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    userId = Column(Integer, ForeignKey('users.userId'), nullable=False)
-    keywordId = Column(Integer, ForeignKey('keywords.keywordId'), nullable=False)
+    userId = Column(Integer, ForeignKey('Users.userId'), nullable=False)
+    keywordId = Column(Integer, ForeignKey('Keywords.keywordId'), nullable=False)
     reportDate = Column(Date, nullable=False)
     reportContent = Column(Text, nullable=True)
     isViewed = Column(Boolean, default=False)
