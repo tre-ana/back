@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
-from models import Keyword, Favorite, Report
+from database import get_db, SessionLocal
+from models import Keyword, Favorite, Report, User
 from auth import get_current_user
 from pydantic import BaseModel
 from datetime import date
@@ -197,33 +197,42 @@ async def delete_report(request: DeleteReportRequest, db: Session = Depends(get_
     # 리포트 삭제 후 메시지 반환
     return {"message": f"Report with ID {request.reportId} deleted successfully!"}
 
-
+    
 @router.post("/generate_reports")
-async def generate_reports(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    user_id = current_user['userId']
-    
-    # 모든 키워드 가져오기
-    keywords = db.query(Keyword).all()
-    if not keywords:
-        raise HTTPException(status_code=404, detail="No keywords found")
-    
-    # 오늘 날짜 가져오기
-    today = date.today()
-    
-    # 각 키워드에 대한 리포트 생성 및 삽입
+async def generate_reports():  # db는 Session 객체
+    db = SessionLocal()
+
+    # 모든 사용자의 정보를 가져옴
+    all_users = db.query(User).all()  # User 모델이 존재한다고 가정
+
+    # 각 사용자의 즐겨찾기 키워드에 대해 리포트를 생성
     new_reports = []
-    for keyword in keywords:
-        new_report = Report(
-            keywordId=keyword.keywordId,
-            userId=user_id,
-            reportDate=today,
-            reportContent=f"Generated report for keyword: {keyword.keyword}",
-            isViewed=False
-        )
-        db.add(new_report)
-        new_reports.append(new_report)
-    
+    today = date.today()
+
+    for user in all_users:
+        # 각 사용자의 즐겨찾기에 추가한 키워드 가져오기
+        favorite_keywords = db.query(Favorite).filter(Favorite.userId == user.userId).all()
+
+        # 즐겨찾기 키워드가 없다면 리포트 생성을 건너뛰기
+        if not favorite_keywords:
+            continue
+
+        for favorite in favorite_keywords:
+            keyword = db.query(Keyword).filter(Keyword.keywordId == favorite.keywordId).first()
+
+            if keyword:
+                new_report = Report(
+                    userId=user.userId,
+                    keywordId=keyword.keywordId,
+                    reportDate=today,
+                    reportContent=f"Generated report for keyword: {keyword.keyword}",
+                    isViewed=False
+                )
+                db.add(new_report)
+                new_reports.append(new_report)
+
     # 변경사항 커밋
     db.commit()
-    
-    return {"message": f"Reports generated for {len(new_reports)} keywords successfully!"}
+
+    return {"message": f"Reports generated for {len(new_reports)} keywords across all users."}
+

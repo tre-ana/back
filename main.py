@@ -14,8 +14,9 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from database import get_db
 
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
+import asyncio
 
 load_dotenv()
 load_model()
@@ -30,7 +31,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-scheduler = BackgroundScheduler()
+scheduler = AsyncIOScheduler()
 
 # CORS 미들웨어 설정
 origins = [
@@ -115,8 +116,9 @@ def health_check():
     return {"status": "healthy"}
 
 
-async def alert_auto_reports():
-    await keyword.generate_reports(db = Depends(get_db), current_user = Depends(keyword.get_current_user))
+async def alert_auto_reports():    
+    await keyword.generate_reports()
+
 
 scheduler.add_job(alert_auto_reports, 'cron', hour=9, minute=0, timezone='Asia/Seoul')
 scheduler.start()
